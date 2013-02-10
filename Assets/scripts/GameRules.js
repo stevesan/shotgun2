@@ -59,16 +59,18 @@ function OnPlayerHitCityHall(player:Player, hall:CityHall)
             if( player.GetSafe().GetAmount() >= expandToCost[n] || debugCheapExpand )
             {
                 player.GetSafe().AddMoney( -expandToCost[n] );
-                arena.ExpandForPlayer(player.GetId());
+                arena.ExpandForPlayer(pid);
                 numExpands[pid]++;
                 AudioSource.PlayClipAtPoint( expandSound, player.gameObject.transform.position );
+                Debug.Log("player " + pid + " expanded " + numExpands[pid]);
+
+                if( numExpands[pid] == expandToCost.length )
+                {
+                    state = "gameover";
+                    statusText.text = "PLAYER "+(player.GetId()+1)+" WINS!!!!\nR to restart";
+                    BroadcastMessage("OnGameOver");
+                }
             }
-        }
-        else
-        {
-            state = "gameover";
-            statusText.text = "PLAYER "+player.GetId()+" WINS!!!!\nR to restart";
-            BroadcastMessage("OnGameOver");
         }
     }
 }
