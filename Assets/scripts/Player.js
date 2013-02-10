@@ -308,8 +308,6 @@ function OnTriggerEnter(other : Collider) : void
     var safe = other.GetComponent(Safe);
     var money = other.GetComponent(Money);
 
-    Debug.Log("trigger enter");
-
     if( tile != null )
     {
         if( tile.isPrivate )
