@@ -137,6 +137,8 @@ function Update()
 {
     var i = 0;
 
+    RemoveNulls(grabbedMoneys);
+
     if( state == "playing" )
     {
         var HButton = "H"+id;
@@ -263,6 +265,10 @@ function Update()
     else if( state == "dead" )
     {
         rigidbody.velocity = Vector3(0,0,0);
+        //transform.rotation.eulerAngles.z = Mathf.Atan2( aimDir.y, aimDir.x ) * Mathf.Rad2Deg - 90.0;
+        transform.rotation.eulerAngles.z = 45;
+
+        Debug.Log("angles = "+transform.rotation.eulerAngles.z);
 
         deadTime += Time.deltaTime;
 
@@ -272,12 +278,11 @@ function Update()
         }
         else
         {
-            statusText.text = "RESPAWN IN " + Mathf.CeilToInt(respawnTime - deadTime);
+            statusText.text = "RESPAWN " + Mathf.CeilToInt(respawnTime - deadTime);
             rigidbody.velocity = Vector3(0,0,0);
             transform.rotation = Quaternion.identity;
         }
     }
-
 }
 
 //----------------------------------------
@@ -416,7 +421,7 @@ function OnDamaged(amt:int, bullet:Bullet)
         healthBarAnim.color = Color(0,0,0,0);   // hide bar
         statusText.gameObject.SetActive(true);
         deadTime = 0.0;
-        anim.Play("death0");
+        anim.Play("death"+GetId());
 
         // notify
         gameRules.OnPlayerDied(this);

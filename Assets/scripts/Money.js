@@ -32,6 +32,8 @@ function OnSpawn()
 {
     state = "idle";
     leader = null;
+    GetComponent(tk2dSprite).color = Color(1,1,1,1);
+    transform.localScale = Vector3(1.0, 1.0, 1.0);
 }
 
 function OnTriggerEnter(other : Collider) : void
@@ -49,6 +51,8 @@ function OnDrop()
 {
     state = "idle";
     leader = null;
+    GetComponent(tk2dSprite).color = Color(1,1,1,1);
+    transform.localScale = Vector3(1.0, 1.0, 1.0);
 }
 
 function OnGrabbed(leader:Transform)
@@ -56,6 +60,8 @@ function OnGrabbed(leader:Transform)
     this.leader = leader;
     state = "grabbed";
     AudioSource.PlayClipAtPoint( grabSound, transform.position );
+    GetComponent(tk2dSprite).color = Color(1,1,1,0.5);
+    transform.localScale = Vector3(0.75, 0.75, 0.75);
 
 }
 

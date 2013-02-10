@@ -119,14 +119,7 @@ function Update ()
         }
 
         // get rid of null moneys
-
-        for( var j = moneys.Count-1; j >= 0; j-- )
-        {
-            if( moneys[j] == null )
-            {
-                moneys.RemoveAt(j);
-            }
-        }
+        RemoveNulls( moneys );
     }
 }
 
