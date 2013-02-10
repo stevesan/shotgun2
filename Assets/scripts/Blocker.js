@@ -3,7 +3,7 @@
 //----------------------------------------
 //  Constants
 //----------------------------------------
-private var kInitialHealth = 20;
+private var kInitialHealth = 15;
 
 var healthBarAnim:tk2dAnimatedSprite;
 private var anim: tk2dAnimatedSprite;

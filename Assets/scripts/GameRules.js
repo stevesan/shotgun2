@@ -124,7 +124,7 @@ function Update ()
             numMoneysSpawned++;
 
             // spawn badge
-            if( numMoneysSpawned % 30 == 0 )
+            if( (numMoneysSpawned) % 24 == 0 )
             {
                 p = arena.GetRandomMoneyPosition(arena.GetWidth()*0.25);
                 Instantiate( badgePrefab, p, Quaternion.identity );
