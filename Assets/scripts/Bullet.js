@@ -46,10 +46,16 @@ function GetOwner() { return this.owner; }
 function OnTriggerEnter(other : Collider) : void
 {
     var hall = other.GetComponent(CityHall);
+    var blocker = other.GetComponent(Blocker);
     if( hall != null )
     {
         Destroy(gameObject);
     }
+    if( blocker != null && blocker.IsWhole() )
+    {
+		blocker.HitByBullet();
+		Destroy(gameObject);
+	}
 }
 
 function OnHit(victim:Player)
