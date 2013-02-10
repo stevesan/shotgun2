@@ -137,7 +137,7 @@ function Update()
 {
     var i = 0;
 
-    RemoveNulls(grabbedMoneys);
+    Utils.RemoveNulls(grabbedMoneys);
 
     if( state == "playing" )
     {

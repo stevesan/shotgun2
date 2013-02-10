@@ -119,7 +119,7 @@ function Update ()
         }
 
         // get rid of null moneys
-        RemoveNulls( moneys );
+        Utils.RemoveNulls( moneys );
     }
 }
 
