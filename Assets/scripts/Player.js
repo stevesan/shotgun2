@@ -13,6 +13,9 @@ var reloadAnim:tk2dAnimatedSprite;
 var reloadSound:AudioClip;
 var healthBarAnim:tk2dAnimatedSprite;
 var flash:tk2dAnimatedSprite;
+var badgeIcon:tk2dSprite;
+var badgeGetSound:AudioClip;
+var deathSound:AudioClip;
 
 private var secsPerSteal = 0.33;
 private var maxSpeed = 1.0f;
@@ -21,6 +24,7 @@ private var respawnTime = 5.0;
 private var bulletSpeed = 2.0;
 private var accelForceScale = 5.0;
 private var reloadTime = 2.0;
+private var badgeDuration = 5.0;
 
 //----------------------------------------
 //  Reference Cache
@@ -52,6 +56,8 @@ private var stealingTime = 0.0;
 private var stealingFromSafe:Safe = null;
 private var grabbedMoneys = List.<Money>();
 private var hasGold = false;
+private var hasBadge = false;
+private var badgeGotTime = 0.0;
 
 private var ammo = 0;
 private var weaponState = "ready";
@@ -82,6 +88,7 @@ function Respawn()
     ammo = 6;
     weaponState = "ready";
     hasGold = false;
+    hasBadge = false;
     reloadAnim.color = Color(0,0,0,0);
     statusText.gameObject.SetActive(false);
     collider.isTrigger = false;
@@ -275,6 +282,20 @@ function Update()
             healthBarAnim.color = Color(1,1,1, 0.5);
             healthBarAnim.transform.localScale = Vector3(0.5,0.5,0.5);
         }
+
+        // Badge state
+        if( hasBadge )
+        {
+            badgeIcon.color.a = 1.0;
+            if( Time.time - badgeGotTime > badgeDuration )
+            {
+                hasBadge = false;
+            }
+        }
+        else
+        {
+            badgeIcon.color.a = 0.0;
+        }
     }
     else if( state == "dead" )
     {
@@ -316,6 +337,9 @@ function LateUpdate()
 
     reloadAnim.transform.position = transform.position + Vector3(0.07,0,0);
     reloadAnim.transform.rotation = Quaternion.identity;
+
+    badgeIcon.transform.position = transform.position + Vector3(-0.07,0,0);
+    badgeIcon.transform.rotation = Quaternion.identity;
 }
 
 function OnTriggerEnter(other : Collider) : void
@@ -324,6 +348,7 @@ function OnTriggerEnter(other : Collider) : void
     var bullet = other.GetComponent(Bullet);
     var safe = other.GetComponent(Safe);
     var money = other.GetComponent(Money);
+    var badge = other.GetComponent(Badge);
 
     if( tile != null )
     {
@@ -391,6 +416,13 @@ function OnTriggerEnter(other : Collider) : void
             }
         }
     }
+    else if( badge != null )
+    {
+        hasBadge = true;
+        badgeGotTime = Time.time;
+        badge.OnGrabbed();
+        AudioSource.PlayClipAtPoint( badgeGetSound, transform.position );
+    }
 }
 
 function OnTriggerExit(other : Collider) : void
@@ -439,6 +471,7 @@ function OnDamaged(amt:int, bullet:Bullet)
         deadTime = 0.0;
         killingBulletDir = bullet.gameObject.transform.up;
         anim.Play("death"+GetId());
+        AudioSource.PlayClipAtPoint( deathSound, transform.position );
 
         // notify
         gameRules.OnPlayerDied(this);
@@ -467,4 +500,9 @@ function GetSafe()
 function GetExpansionCost() : int
 {
     return gameRules.GetExpansionCost(GetId());
+}
+
+function GetHasBadge() : boolean
+{
+    return hasBadge;
 }

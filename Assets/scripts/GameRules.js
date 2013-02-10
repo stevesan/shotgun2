@@ -8,6 +8,10 @@ private var goldPrefab:Money;
 
 private var statusText:TextMesh;
 
+private var lastBadgeSpawnTime = 0.0;
+private var kBadgeSpawnPeriod = 30.0;
+private var badgePrefab:GameObject;
+
 private var lastMoneySpawnTime = 0.0;
 private var spawnMoneyPeriod = 1.0;
 private var maxAvailMoneys = 5;
@@ -28,6 +32,7 @@ function Start ()
     moneyPrefab = GameObject.Find("moneyPrefab").GetComponent(Money);
     goldPrefab = GameObject.Find("goldPrefab").GetComponent(Money);
     statusText = GameObject.Find("gameStatusText").GetComponent(TextMesh);
+    badgePrefab = GameObject.Find("badgePrefab");
 
     ResetGame();
 }
@@ -40,6 +45,7 @@ function ResetGame()
     }
 
     lastMoneySpawnTime = Time.time;
+    lastBadgeSpawnTime = Time.time;
     numMoneysSpawned = 0;
 
     statusText.text = "";
@@ -116,18 +122,38 @@ function Update ()
             var inst = Instantiate( prefab, p, Quaternion.identity );
             moneys.Add(inst);
             numMoneysSpawned++;
+
+            // spawn badge
+            if( numMoneysSpawned % 30 == 0 )
+            {
+                p = arena.GetRandomMoneyPosition(arena.GetWidth()*0.25);
+                Instantiate( badgePrefab, p, Quaternion.identity );
+            }
         }
 
         // get rid of null moneys
         Utils.RemoveNulls( moneys );
     }
+
+    //----------------------------------------
+    //  Do badge spawning
+    //----------------------------------------
+
+    /*
+    if( Time.time - lastBadgeSpawnTime > kBadgeSpawnPeriod )
+    {
+        lastBadgeSpawnTime = Time.time;
+
+    }
+    */
 }
 
 function OnBulletHit( bullet:Bullet, player:Player )
 {
     if( bullet.GetOwner() != player )
     {
-        if( player.GetIsTrespassingOn( bullet.GetOwner().GetId() ) )
+        if( player.GetIsTrespassingOn( bullet.GetOwner().GetId() ) 
+                || bullet.GetOwner().GetHasBadge() )
         {
             bullet.OnHit(player);
             player.OnDamaged(1, bullet);
