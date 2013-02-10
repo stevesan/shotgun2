@@ -12,10 +12,9 @@ var toomuchMoneySound:AudioClip;
 var reloadAnim:tk2dAnimatedSprite;
 var reloadSound:AudioClip;
 var healthBarAnim:tk2dAnimatedSprite;
-var redbox:tk2dSprite;
 var flash:tk2dAnimatedSprite;
 
-private var secsPerSteal = 0.5;
+private var secsPerSteal = 0.33;
 private var maxSpeed = 1.0f;
 private var maxAccelMag = 10.0f;
 private var respawnTime = 5.0;
@@ -255,7 +254,7 @@ function Update()
         healthBarAnim.SetFrame( health-1 );
         healthBarAnim.Pause();
 
-        // update redbox
+        // trespassing feedback
         var trespassing = false;
         for( i = 0; i < 4; i++ )
         {
@@ -265,12 +264,21 @@ function Update()
                 break;
             }
         }
-        redbox.color = Color(1,1,1, trespassing ? 1.0 : 0.0 );
+
+        if( trespassing )
+        {
+            healthBarAnim.color = Color(1,1,1, 1.0);
+            healthBarAnim.transform.localScale = Vector3(1,1,1);
+        }
+        else
+        {
+            healthBarAnim.color = Color(1,1,1, 0.5);
+            healthBarAnim.transform.localScale = Vector3(0.5,0.5,0.5);
+        }
     }
     else if( state == "dead" )
     {
         deadTime += Time.deltaTime;
-        redbox.color = Color(1,1,1, 0.1);
 
         if( deadTime > respawnTime )
         {
