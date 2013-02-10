@@ -11,6 +11,8 @@ var stashSound:AudioClip;
 var toomuchMoneySound:AudioClip;
 var reloadAnim:tk2dAnimatedSprite;
 var reloadSound:AudioClip;
+var healthBarAnim:tk2dAnimatedSprite;
+var redbox:tk2dSprite;
 
 private var secsPerSteal = 0.5;
 private var maxSpeed = 1.0f;
@@ -67,6 +69,8 @@ function Respawn()
         trespassingCount[i] = 0;
     }
 
+    // RESET ALL THE STATE
+
     aimDir = Vector3(0,1);
     health = 5;
     deadTime = 0.0;
@@ -77,8 +81,12 @@ function Respawn()
     ammo = 6;
     weaponState = "ready";
     hasGold = false;
-
     reloadAnim.color = Color(0,0,0,0);
+    statusText.gameObject.SetActive(false);
+    collider.isTrigger = false;
+    healthBarAnim.color = Color(1,1,1,1);
+    transform.position = spawnPos;
+    anim.Play("walk"+id);
 }
 
 function Start ()
@@ -115,13 +123,19 @@ function OnStartGame()
     Respawn();
 }
 
+private function TransitionWeaponStateToReload()
+{
+    ammo = 0;
+    weaponState = "reload";
+    reloadStartTime = Time.time;
+    AudioSource.PlayClipAtPoint( reloadSound, transform.position );
+    reloadAnim.color = Color(1,1,1,0.5);
+    reloadAnim.Play();
+}
+
 function Update()
 {
     var i = 0;
-
-    // Don't have it rotate with us
-    statusText.transform.position = transform.position + Vector3(0,0.1,0);
-    statusText.transform.rotation = Quaternion.identity;
 
     if( state == "playing" )
     {
@@ -149,7 +163,7 @@ function Update()
 
         // Apply forces to enforce goal speed
 
-        var goalVel = moveInput * (hasGold ? maxSpeed*0.40 : maxSpeed);
+        var goalVel = moveInput * (hasGold ? maxSpeed*0.25 : maxSpeed);
 
         var deltaVelocity = accelForceScale*(goalVel - rigidbody.velocity);
         var accel = deltaVelocity;// / Time.deltaTime;
@@ -175,46 +189,27 @@ function Update()
                 ammo--;
                 if( ammo <= 0 )
                 {
-                    weaponState = "reload";
-                    reloadStartTime = Time.time;
-                    AudioSource.PlayClipAtPoint( reloadSound, transform.position );
-                    reloadAnim.color = Color(1,1,1,0.5);
-                    reloadAnim.Play();
+                    TransitionWeaponStateToReload();
                 }
             }
         }
         else if( weaponState == "reload" )
         {
-            if( Time.time - reloadStartTime > reloadTime )
+            var effectiveReloadTime = hasGold ? 2*reloadTime : reloadTime;
+
+            if( Time.time - reloadStartTime > effectiveReloadTime )
             {
                 weaponState = "ready";
                 ammo = 6;
                 reloadAnim.color = Color(0,0,0,0);
             }
-        }
-
-        statusText.text = "";
-        for( i = 0; i < health; i++ )
-        {
-            statusText.text += "=";
-        }
-        statusText.text += "";
-
-        // Trespassing state
-
-        var trespassing = false;
-        for( i = 0; i < 4; i++ )
-        {
-            if( i != id && GetIsTrespassingOn(i) )
+            else
             {
-                trespassing = true;
-                break;
+                var fraction = (Time.time-reloadStartTime) / effectiveReloadTime;
+                reloadAnim.Play();
+                reloadAnim.SetFrame( Mathf.FloorToInt(fraction*4) );
+                reloadAnim.Pause();
             }
-        }
-
-        if( trespassing )
-        {
-            statusText.text += "\nDANGER";
         }
 
         // Steal from safe?
@@ -234,9 +229,41 @@ function Update()
                 stealingTime = 0.0;
             }
         }
+
+        // update animation according to velocity
+        if( rigidbody.velocity.magnitude > 0.1 )
+        {
+            if( !anim.isPlaying() )
+            {
+                anim.Play();
+            }
+        }
+        else
+        {
+            anim.Stop();
+        }
+
+        // update health bar anim
+        healthBarAnim.Play();
+        healthBarAnim.SetFrame( health-1 );
+        healthBarAnim.Pause();
+
+        // update redbox
+        var trespassing = false;
+        for( i = 0; i < 4; i++ )
+        {
+            if( i != id && GetIsTrespassingOn(i) )
+            {
+                trespassing = true;
+                break;
+            }
+        }
+        redbox.color = Color(1,1,1, trespassing ? 1.0 : 0.0 );
     }
     else if( state == "dead" )
     {
+        rigidbody.velocity = Vector3(0,0,0);
+
         deadTime += Time.deltaTime;
 
         if( deadTime > respawnTime )
@@ -251,18 +278,22 @@ function Update()
         }
     }
 
-    // update animation according to velocity
-    if( rigidbody.velocity.magnitude > 0.1 )
-    {
-        if( !anim.isPlaying() )
-        {
-            anim.Play();
-        }
-    }
-    else
-    {
-        anim.Stop();
-    }
+}
+
+//----------------------------------------
+//  Allow us to override transforms before draw
+//----------------------------------------
+function LateUpdate()
+{
+    // Don't have it rotate with us
+    statusText.transform.position = transform.position + Vector3(0,0.1,0);
+    statusText.transform.rotation = Quaternion.identity;
+
+    healthBarAnim.transform.position = transform.position + Vector3(0,0.07,0);
+    healthBarAnim.transform.rotation = Quaternion.identity;
+
+    reloadAnim.transform.position = transform.position + Vector3(0.07,0,0);
+    reloadAnim.transform.rotation = Quaternion.identity;
 }
 
 function OnTriggerEnter(other : Collider) : void
@@ -371,6 +402,8 @@ function OnDamaged(amt:int, bullet:Bullet)
 
     if( health <= 0 )
     {
+        // transition to dead
+
         // Drop all my money
         for( var m:Money in grabbedMoneys )
         {
@@ -379,9 +412,13 @@ function OnDamaged(amt:int, bullet:Bullet)
         grabbedMoneys.Clear();
 
         state = "dead";
+        collider.isTrigger = true; // ghost-mode
+        healthBarAnim.color = Color(0,0,0,0);   // hide bar
+        statusText.gameObject.SetActive(true);
         deadTime = 0.0;
-        transform.position = spawnPos;
+        anim.Play("death0");
 
+        // notify
         gameRules.OnPlayerDied(this);
     }
 
