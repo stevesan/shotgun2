@@ -48,6 +48,18 @@ function OnTriggerEnter(other : Collider) : void
 	}
 }
 
+function OnTriggerStay(other : Collider) : void
+{
+	var safe = other.GetComponent(Safe);
+	if (state == "cashing" && safe != null){
+		safe.AddMoney( this.GetIsGold() ? 5 : 1 );
+	    leader = null;
+	    state = "cashed";
+		AudioSource.PlayClipAtPoint(safe.GetOwner().stashSound, transform.position);
+	    Destroy(gameObject);
+	}
+}
+
 function OnCashedIn(toSafe:Transform)
 {
     state = "cashing";
