@@ -146,6 +146,9 @@ function Start ()
     //----------------------------------------
     //  Create tiles
     //----------------------------------------
+
+    var treePrefab = GameObject.Find("treePrefab");
+
     var bounds = publicTile.gameObject.GetComponent(MeshFilter).mesh.bounds;
     var width = bounds.size.x;
     var height = bounds.size.y;
@@ -181,6 +184,13 @@ function Start ()
         else if( c == 'w' )
         {
             tileRows[ tileRows.Count-1 ].Add( Instantiate(wallBlock, nextPos, nextRot) );
+            nextX += width;
+        }
+        else if( c == '.' )
+        {
+            tileRows[ tileRows.Count-1 ].Add( Instantiate(publicTile, nextPos, nextRot) );
+            var treeInst = Instantiate(treePrefab, nextPos+Vector3(0,0,-0.01), nextRot);
+            treeInst.GetComponent(Blocker).OnSpawn();
             nextX += width;
         }
         else if( int.TryParse(c+"", privateId) && privateId < 4 )

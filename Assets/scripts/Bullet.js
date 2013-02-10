@@ -12,7 +12,6 @@ private var velocity = Vector3(0,0,0);
 
 function Start()
 {
-    Debug.Log("created bullet");
 }
 
 function Update()
@@ -47,14 +46,18 @@ function OnTriggerEnter(other : Collider) : void
 {
     var hall = other.GetComponent(CityHall);
     var blocker = other.GetComponent(Blocker);
+
     if( hall != null )
     {
         Destroy(gameObject);
     }
-    if( blocker != null && blocker.IsWhole() )
+    else if( blocker != null )
     {
-		blocker.HitByBullet();
-		Destroy(gameObject);
+        if( blocker.GetBlocksBullets() )
+        {
+            blocker.OnHitByBullet(this);
+            Destroy(gameObject);
+        }
 	}
 }
 
