@@ -15,13 +15,13 @@ function Start ()
 
 function Update () {
 
-    if( state == "grabbed" && leader != null)
+    if( (state == "grabbed" || state == "cashing") && leader != null)
     {
         // move towards player
         var goal = leader.position;
         var delta = goal - transform.position;
 
-        if( delta.magnitude > 0.1 )
+        if( delta.magnitude > ( state == "grabbed" ? 0.1 : 0.0 ) )
         {
             transform.position += delta.normalized * floatSpeed * Time.deltaTime;
         }
@@ -38,13 +38,20 @@ function OnSpawn()
 
 function OnTriggerEnter(other : Collider) : void
 {
+    var safe = other.GetComponent(Safe);
+	if (state == "cashing" && safe != null){
+		safe.AddMoney( this.GetIsGold() ? 5 : 1 );
+	    leader = null;
+	    state = "cashed";
+		AudioSource.PlayClipAtPoint(safe.GetOwner().stashSound, transform.position);
+	    Destroy(gameObject);
+	}
 }
 
-function OnCashedIn()
+function OnCashedIn(toSafe:Transform)
 {
-    state = "idle";
-    leader = null;
-    Destroy(gameObject);
+    state = "cashing";
+    leader = toSafe;
 }
 
 function OnDrop()
@@ -67,7 +74,7 @@ function OnGrabbed(leader:Transform)
 
 function GetIsGrabbed()
 {
-    return state == "grabbed";
+    return state == "grabbed" || state == "cashing" || state == "cashed";
 }
 
 function GetIsGold() { return isGold; }

@@ -330,12 +330,10 @@ function OnTriggerEnter(other : Collider) : void
                 // MONEY IN MY BANK!
                 for( var m:Money in grabbedMoneys )
                 {
-                    safe.AddMoney( m.GetIsGold() ? 5 : 1 );
-                    m.OnCashedIn();
+                    m.OnCashedIn(safe.transform);
                 }
 
                 grabbedMoneys.Clear();
-                AudioSource.PlayClipAtPoint(stashSound, transform.position);
                 hasGold = false;
             }
         }
