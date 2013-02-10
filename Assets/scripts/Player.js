@@ -13,6 +13,7 @@ var reloadAnim:tk2dAnimatedSprite;
 var reloadSound:AudioClip;
 var healthBarAnim:tk2dAnimatedSprite;
 var redbox:tk2dSprite;
+var flash:tk2dAnimatedSprite;
 
 private var secsPerSteal = 0.5;
 private var maxSpeed = 1.0f;
@@ -47,6 +48,7 @@ private var trespassingCount : int[] = [0,0,0,0];
 private var aimDir = Vector3(0,1);
 private var health = 0;
 private var deadTime = 0.0;
+private var killingBulletDir = Vector3(0,0,0);
 private var stealingTime = 0.0;
 private var stealingFromSafe:Safe = null;
 private var grabbedMoneys = List.<Money>();
@@ -183,10 +185,13 @@ function Update()
             var FireButton = "F"+id;
             if( Input.GetButtonDown(FireButton) )
             {
+                // Fire bullet
                 var bullet = Instantiate( bulletPrefab, transform.position, Quaternion.identity );
                 bullet.OnFire(aimDir*bulletSpeed);
                 bullet.SetOwner(this);
                 AudioSource.PlayClipAtPoint( shootSound, transform.position );
+                flash.Stop();
+                flash.Play();
 
                 ammo--;
                 if( ammo <= 0 )
@@ -264,13 +269,8 @@ function Update()
     }
     else if( state == "dead" )
     {
-        rigidbody.velocity = Vector3(0,0,0);
-        //transform.rotation.eulerAngles.z = Mathf.Atan2( aimDir.y, aimDir.x ) * Mathf.Rad2Deg - 90.0;
-        transform.rotation.eulerAngles.z = 45;
-
-        Debug.Log("angles = "+transform.rotation.eulerAngles.z);
-
         deadTime += Time.deltaTime;
+        redbox.color = Color(1,1,1, 0.1);
 
         if( deadTime > respawnTime )
         {
@@ -279,9 +279,18 @@ function Update()
         else
         {
             statusText.text = "RESPAWN " + Mathf.CeilToInt(respawnTime - deadTime);
-            rigidbody.velocity = Vector3(0,0,0);
-            transform.rotation = Quaternion.identity;
+            rigidbody.velocity = killingBulletDir * 0.50 * Mathf.Max(0.0, 1.0-deadTime);
+            transform.rotation.eulerAngles.z = Mathf.Atan2( killingBulletDir.y, killingBulletDir.x ) * Mathf.Rad2Deg + 90.0;
         }
+    }
+
+    if( !flash.isPlaying() )
+    {
+        flash.color = Color(0,0,0,0);
+    }
+    else
+    {
+        flash.color = Color(1,1,1,1);
     }
 }
 
@@ -408,7 +417,10 @@ function OnDamaged(amt:int, bullet:Bullet)
         // Drop all my money
         for( var m:Money in grabbedMoneys )
         {
-            m.OnDrop();
+            if( m != null )
+            {
+                m.OnDrop();
+            }
         }
         grabbedMoneys.Clear();
 
@@ -417,6 +429,7 @@ function OnDamaged(amt:int, bullet:Bullet)
         healthBarAnim.color = Color(0,0,0,0);   // hide bar
         statusText.gameObject.SetActive(true);
         deadTime = 0.0;
+        killingBulletDir = bullet.gameObject.transform.up;
         anim.Play("death"+GetId());
 
         // notify
