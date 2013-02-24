@@ -1,9 +1,21 @@
 #pragma strict
 
 //----------------------------------------
-//  Constants
+//  Tuning Constants
 //----------------------------------------
+private var secsPerSteal = 0.33;
+private var maxSpeed = 1.0f;
+private var maxAccelMag = 10.0f;
+private var respawnTime = 5.0;
+private var accelForceScale = 15.0;
+private var reloadTime = 2.0;
+private var badgeDuration = 5.0;
+private var bulletSpeed = 2.0;
+private var shotgunBulletSpeed = 4.0;
 
+//----------------------------------------
+//  Editor slots
+//----------------------------------------
 var shootSound:AudioClip;
 var hurtSound:AudioClip;
 var stealSound:AudioClip;
@@ -16,15 +28,7 @@ var flash:tk2dAnimatedSprite;
 var badgeIcon:tk2dSprite;
 var badgeGetSound:AudioClip;
 var deathSound:AudioClip;
-
-private var secsPerSteal = 0.33;
-private var maxSpeed = 1.0f;
-private var maxAccelMag = 10.0f;
-private var respawnTime = 5.0;
-private var bulletSpeed = 2.0;
-private var accelForceScale = 5.0;
-private var reloadTime = 2.0;
-private var badgeDuration = 5.0;
+var shootShotgunSound:AudioClip;
 
 //----------------------------------------
 //  Reference Cache
@@ -61,6 +65,7 @@ private var badgeGotTime = 0.0;
 
 private var ammo = 0;
 private var weaponState = "ready";
+private var weaponType = "shotgun";
 private var reloadStartTime = 0.0;
 
 function Awake()
@@ -87,6 +92,7 @@ function Respawn()
     state = "playing";
     ammo = 6;
     weaponState = "ready";
+	weaponType = "shotgun";
     hasGold = false;
     hasBadge = false;
     reloadAnim.color = Color(0,0,0,0);
@@ -176,7 +182,7 @@ function Update()
         var goalVel = moveInput * (hasGold ? maxSpeed*0.25 : maxSpeed);
 
         var deltaVelocity = accelForceScale*(goalVel - rigidbody.velocity);
-        var accel = deltaVelocity;// / Time.deltaTime;
+        var accel = deltaVelocity;
 
         if( accel.magnitude > maxAccelMag )
         {
@@ -191,19 +197,46 @@ function Update()
             var FireButton = "F"+id;
             if( Input.GetButtonDown(FireButton) )
             {
-                // Fire bullet
-                var bullet = Instantiate( bulletPrefab, transform.position, Quaternion.identity );
-                bullet.OnFire(aimDir*bulletSpeed);
-                bullet.SetOwner(this);
-                AudioSource.PlayClipAtPoint( shootSound, transform.position );
-                flash.Stop();
-                flash.Play();
+				if( weaponType == "shotgun" )
+				{
+					for( var bulletNum = 0; bulletNum < 6; bulletNum++ )
+					{
+						var spreadDegs = 30.0;
+						var deviationDegs = -spreadDegs/2.0 + (bulletNum)/(5.0)*spreadDegs;
+						Debug.Log(""+deviationDegs);
+						var deviationQuat = Quaternion.identity;
+						deviationQuat.eulerAngles.z += deviationDegs;
+						var deviatedDir = deviationQuat * aimDir;
 
-                ammo--;
-                if( ammo <= 0 )
-                {
-                    TransitionWeaponStateToReload();
-                }
+						// Fire bullet
+						var shot = Instantiate( bulletPrefab, transform.position, Quaternion.identity );
+						shot.OnFire(deviatedDir*shotgunBulletSpeed);
+						shot.SetOwner(this);
+						ammo--;
+
+					}
+
+					flash.Stop();
+					flash.Play();
+					AudioSource.PlayClipAtPoint( shootShotgunSound, transform.position );
+				}
+				else
+				{
+					// Fire bullet
+					var bullet = Instantiate( bulletPrefab, transform.position, Quaternion.identity );
+					bullet.OnFire(aimDir*bulletSpeed);
+					bullet.SetOwner(this);
+					AudioSource.PlayClipAtPoint( shootSound, transform.position );
+					flash.Stop();
+					flash.Play();
+
+					ammo--;
+				}
+
+				if( ammo <= 0 )
+				{
+					TransitionWeaponStateToReload();
+				}
             }
         }
         else if( weaponState == "reload" )
